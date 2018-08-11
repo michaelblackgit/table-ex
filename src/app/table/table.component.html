@@ -1,18 +1,21 @@
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th scope="col">{{ currentTime }}</th>
-      <th scope="col" *ngFor="let measurand of selectedMeasurands">
-        {{ measurand.name }} ({{ measurand.value }})
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let rowData of rowDisplay.reverse()">
-      <td>{{ rowData.time }}</td>
-      <td *ngFor="let value of rowData.values">{{ value }}</td>
-    </tr>
-  </tbody>
-</table>
-<button class="btn" (click)="start()">Start</button>
-<button class="btn" (click)="stop()">Stop</button>
+<div *ngIf="selected">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">{{ currentTime }}</th>
+        <th scope="col" *ngFor="let measurand of selectedMeasurands">
+          {{ measurand.name }} ({{ measurand.value }})
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let rowData of rowDisplay.reverse()">
+        <td>{{ rowData.time }}</td>
+        <td *ngFor="let value of rowData.values">{{ value }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <button class="btn" (click)="start()" style="margin-left: 1cm; margin-right: 1cm;">Start</button>
+  <button class="btn" (click)="stop()">Stop</button>
+</div>
+<button *ngIf="!selected" class="btn" (click)="open()" style="position: absolute; top: 50%; left: 45%;">Select Measurands</button>

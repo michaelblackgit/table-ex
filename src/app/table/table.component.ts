@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-table',
@@ -13,8 +14,10 @@ export class TableComponent implements OnInit, OnDestroy {
   measData: any[];
   currentTime: string;
   alive: boolean;
+  selected: boolean;
+  modalData: string;
 
-  constructor() {
+  constructor(private modalService: NgbModal) {
     this.measurands = [];
     this.selectedMeasurands = [];
     this.rowDisplay = [];
@@ -23,17 +26,12 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.selectedMeasurands = [
-      { name: 'meas1', value: '1' },
-      { name: 'meas2', value: '2' },
-      { name: 'meas3', value: '3' }
-    ];
-    this.alive = true;
-    this.update();
+    this.selected = false;
   }
 
   ngOnDestroy() {
     this.alive = false;
+    this.selected = false;
   }
 
   async update(): Promise<any> {
@@ -44,18 +42,17 @@ export class TableComponent implements OnInit, OnDestroy {
       this.formatMeasData();
       if(this.measData.length > 7)
         this.rowDisplay = this.measData.slice(this.measData.length - 7);
-      else this.rowDisplay = this.measData;
+      else this.formatIntroRowDisplay();
     }
   }
 
   getMeasData(): void {
-    let val1 = Math.floor(Math.random() * 10);
-    let val2 = Math.floor(Math.random() * 10);
-    let val3 = Math.floor(Math.random() * 10);
+    let vals = [];
+    this.selectedMeasurands.forEach(() => vals.push(Math.floor(Math.random() * 10)));
 
     this.measData.push({
       time: this.currentTime,
-      values: [val1.toString(), val2.toString(), val3.toString()]
+      values: vals
     });
   }
 
@@ -67,6 +64,16 @@ export class TableComponent implements OnInit, OnDestroy {
       else this.selectedMeasurands[i].value = val;
       i++;
     });
+  }
+
+  formatIntroRowDisplay(): void {
+    this.rowDisplay = [];
+    let vals = [];
+    this.selectedMeasurands.forEach(() => vals.push(' '));
+    for(let i = 0; i < (7 - this.measData.length); i++) {
+      this.rowDisplay.push({ time: this.currentTime, values: vals });
+    }
+    this.measData.forEach((meas) => this.rowDisplay.push(meas));
   }
 
   sleep(ms: number): Promise<any> {
@@ -94,5 +101,49 @@ export class TableComponent implements OnInit, OnDestroy {
 
   stop(): void {
     this.alive = false;
+  }
+
+  private open(): void {
+    const modalRef = this.modalService.open(TableModal);
+    modalRef.componentInstance.data = this.modalData;
+    modalRef.result.then(result => {
+      this.selectedMeasurands = result;
+      this.alive = true;
+      this.selected = true;
+      this.formatIntroRowDisplay();
+      this.update();
+    });
+  }
+}
+
+@Component({
+  selector: 'table-modal',
+  templateUrl: './table.modal.html',
+  styles: []
+})
+
+export class TableModal {
+
+  measurands: any[];
+  selectedMeasurands: any[];
+
+  constructor(public activeModal: NgbActiveModal) {
+    this.measurands = [
+      { name: 'meas1', value: '1' },
+      { name: 'meas2', value: '2' },
+      { name: 'meas3', value: '3' },
+      { name: 'meas4', value: '4' },
+      { name: 'meas5', value: '5' }
+    ];
+    this.selectedMeasurands = [];
+  }
+
+  private select(): void {
+    this.activeModal.close(this.selectedMeasurands);
+  }
+
+  private addMeasurand(meas: any): void {
+    if(!this.selectedMeasurands.includes(meas))
+      this.selectedMeasurands.push(meas);
   }
 }
