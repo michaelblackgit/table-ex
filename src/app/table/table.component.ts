@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-table',
@@ -15,14 +16,17 @@ export class TableComponent implements OnInit, OnDestroy {
   currentTime: string;
   alive: boolean;
   selected: boolean;
+  wait: boolean;
   modalData: string;
+  maxRow: number;
 
   constructor(private modalService: NgbModal) {
     this.measurands = [];
     this.selectedMeasurands = [];
     this.rowDisplay = [];
     this.measData = [];
-    this.currentTime = this.getTime();
+    this.currentTime = moment().format('HH:mm:ss');
+    this.maxRow = 7;
   }
 
   ngOnInit() {
@@ -32,17 +36,18 @@ export class TableComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.alive = false;
     this.selected = false;
+    this.wait = false;
   }
 
   async update(): Promise<any> {
     while(this.alive) {
       await this.sleep(1000);
-      this.currentTime = this.getTime();
+      this.currentTime = moment().format('HH:mm:ss')
       this.getMeasData();
       this.formatMeasData();
-      if(this.measData.length > 7)
-        this.rowDisplay = this.measData.slice(this.measData.length - 7);
-      else this.formatIntroRowDisplay();
+      if(this.measData.length > this.maxRow && !this.wait)
+        this.rowDisplay = this.measData.slice(this.measData.length - this.maxRow);
+      else if(!this.wait) this.formatIntroRowDisplay();
     }
   }
 
@@ -69,23 +74,17 @@ export class TableComponent implements OnInit, OnDestroy {
   formatIntroRowDisplay(): void {
     this.rowDisplay = [];
     let vals = [];
+    let now = moment();
     this.selectedMeasurands.forEach(() => vals.push(' '));
-    for(let i = 0; i < (7 - this.measData.length); i++) {
-      this.rowDisplay.push({ time: this.currentTime, values: vals });
+    for(let i = 0; i < (this.maxRow - this.measData.length); i++) {
+      this.rowDisplay.push({ time: now.subtract(i, 'seconds').format('HH:mm:ss'), values: vals });
     }
+    this.rowDisplay.reverse();
     this.measData.forEach((meas) => this.rowDisplay.push(meas));
   }
 
   sleep(ms: number): Promise<any> {
     return new Promise(r => setTimeout(r, ms));
-  }
-
-  getTime(): string {
-    let d = new Date();
-    let h = this.addZero(d.getHours());
-    let m = this.addZero(d.getMinutes());
-    let s = this.addZero(d.getSeconds());
-    return h + ":" + m + ":" + s;
   }
 
   addZero(i: number): string {
@@ -95,12 +94,11 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   start(): void {
-    this.alive = true;
-    this.update();
+    this.wait = false;
   }
 
   stop(): void {
-    this.alive = false;
+    this.wait = true;
   }
 
   private open(): void {
